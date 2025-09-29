@@ -14,6 +14,8 @@ logger = get_logger(__name__)
 
 console = Console(stderr=True)
 
+rich_handler = RichHandler(console=console, rich_tracebacks=True)
+
 def configure_logging(
     level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | int = "INFO",
     logger: logging.Logger | None = None,
@@ -40,11 +42,7 @@ def configure_logging(
         logger = logging.getLogger("fastmcp")
 
     # Only configure the FastMCP logger namespace
-    handler = RichHandler(
-        console=console,
-        rich_tracebacks=enable_rich_tracebacks,
-        **rich_kwargs,
-    )
+    handler = rich_handler
     formatter = logging.Formatter("%(message)s")
     handler.setFormatter(formatter)
 
@@ -77,8 +75,15 @@ def os_terminal_size():
 def cause_traceback():
     configure_logging()
     logger.info("Causing traceback")
+    logger.info(str(rich_handler))
     logger.info(str(console))
     raise Exception("Test exception")
+
+@mcp.tool()
+def set_rich_handler_width(width: int):
+    rich_handler.tracebacks_code_width = width
+    rich_handler.tracebacks_width = width
+    return str(rich_handler)
 
 @mcp.tool()
 def get_environment():
