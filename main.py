@@ -8,8 +8,6 @@ logger = get_logger(__name__)
 configure_logging()
 
 logger.info("Starting program")
-logger.info("shutil = %s", get_terminal_size())
-logger.info("os = %s", os.get_terminal_size())
 
 mcp = FastMCP(__name__)
 
@@ -24,6 +22,14 @@ def os_terminal_size():
 @mcp.tool()
 def cause_traceback():
     raise Exception("Test exception")
+
+@mcp.tool()
+def get_environment():
+    return {k: v for k, v in os.environ.items()}
+
+@mcp.tool()
+def get_columns():
+    return os.environ.get("COLUMNS")
 
 if __name__ == "__main__":
     mcp.run()
