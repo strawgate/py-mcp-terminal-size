@@ -75,6 +75,9 @@ def os_terminal_size():
 
 @mcp.tool()
 def cause_traceback():
+    configure_logging()
+    logger.info("Causing traceback")
+    logger.info(str(console))
     raise Exception("Test exception")
 
 @mcp.tool()
