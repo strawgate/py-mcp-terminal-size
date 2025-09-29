@@ -12,52 +12,11 @@ import fastmcp
 
 logger = get_logger(__name__)
 
-console = Console(stderr=True)
 
-rich_handler = RichHandler(console=console, rich_tracebacks=True)
+def get_handlers_from_logger() -> list[RichHandler]:
+    logger = logging.getLogger("fastmcp")
+    return [hdlr for hdlr in logger.handlers if isinstance(hdlr, RichHandler)]
 
-def configure_logging(
-    level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | int = "INFO",
-    logger: logging.Logger | None = None,
-    enable_rich_tracebacks: bool | None = None,
-    **rich_kwargs: Any,
-) -> None:
-    """
-    Configure logging for FastMCP.
-
-    Args:
-        logger: the logger to configure
-        level: the log level to use
-        rich_kwargs: the parameters to use for creating RichHandler
-    """
-    # Check if logging is disabled in settings
-    if not fastmcp.settings.log_enabled:
-        return
-
-    # Use settings default if not specified
-    if enable_rich_tracebacks is None:
-        enable_rich_tracebacks = fastmcp.settings.enable_rich_tracebacks
-
-    if logger is None:
-        logger = logging.getLogger("fastmcp")
-
-    # Only configure the FastMCP logger namespace
-    handler = rich_handler
-    formatter = logging.Formatter("%(message)s")
-    handler.setFormatter(formatter)
-
-    logger.setLevel(level)
-
-    # Remove any existing handlers to avoid duplicates on reconfiguration
-    for hdlr in logger.handlers[:]:
-        logger.removeHandler(hdlr)
-
-    logger.addHandler(handler)
-
-    # Don't propagate to the root logger
-    logger.propagate = False
-
-configure_logging()
 
 logger.info("Starting program")
 
@@ -75,12 +34,14 @@ def os_terminal_size():
 def cause_traceback():
     configure_logging()
     logger.info("Causing traceback")
+    rich_handler: RichHandler = get_handlers_from_logger()[0]
     logger.info(str(rich_handler))
-    logger.info(str(console))
+    logger.info(str(rich_handler.console))
     raise Exception("Test exception")
 
 @mcp.tool()
 def set_rich_handler_width(width: int):
+    rich_handler: RichHandler = get_handlers_from_logger()[0]
     rich_handler.tracebacks_code_width = width
     rich_handler.tracebacks_width = width
     return str(rich_handler)
@@ -94,8 +55,13 @@ def get_columns():
     return os.environ.get("COLUMNS")
 
 @mcp.tool()
+def get_logger_handlers():
+    return get_handlers_from_logger()
+
+@mcp.tool()
 def get_console():
-    return str(console)
+    rich_handler: RichHandler = get_handlers_from_logger()[0]
+    return str(rich_handler.console)
 
 if __name__ == "__main__":
     mcp.run(transport="sse",port=5000)
